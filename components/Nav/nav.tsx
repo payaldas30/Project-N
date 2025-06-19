@@ -1,64 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
 import { menuItems, socialLinks, footerLinks } from './navbarData';
-
-// Safe hooks with error handling
-const useSafeRouter = () => {
-  const [currentPath, setCurrentPath] = useState('/');
-  const [routerError, setRouterError] = useState(false);
-
-  useEffect(() => {
-    // Try to get current path from window location as fallback
-    if (typeof window !== 'undefined') {
-      setCurrentPath(window.location.pathname);
-    }
-  }, []);
-
-  const push = (path: string) => {
-    if (typeof window !== 'undefined') {
-      window.location.href = path;
-    }
-  };
-
-  // Try to use Next.js router hooks
-  let nextRouter = null;
-  let nextPathname = null;
-
-  try {
-    // Try App Router first
-    const { useRouter } = require('next/navigation');
-    const { usePathname } = require('next/navigation');
-    nextRouter = useRouter();
-    nextPathname = usePathname();
-  } catch (error) {
-    try {
-      // Fallback to Pages Router
-      const { useRouter } = require('next/router');
-      const router = useRouter();
-      nextRouter = router;
-      nextPathname = router.pathname;
-    } catch (error) {
-      // If both fail, use our fallback
-      setRouterError(true);
-    }
-  }
-
-  return {
-    push: nextRouter?.push || push,
-    pathname: nextPathname || currentPath,
-    routerError
-  };
-};
+import { useRouter } from 'next/navigation';
 
 const LeftNavbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   
-  const { push, pathname, routerError } = useSafeRouter();
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const currentImageRef = useRef<HTMLImageElement>(null);
+  const router = useRouter();
 
   // Check if device is desktop
   useEffect(() => {
@@ -92,12 +44,6 @@ const LeftNavbar = () => {
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
     setHoveredItem(null);
-  };
-
-  // Handle navigation
-  const handleNavigation = (path: string) => {
-    setIsMenuOpen(false);
-    push(path);
   };
 
   // Handle hover effects
@@ -308,7 +254,7 @@ const LeftNavbar = () => {
         transition={{ duration: 0.3 }}
       >
         {/* Logo */}
-        <Link href="/" className='flex items-center space-x-5 cursor-hover-trigger'>
+       <div className='flex items-center space-x-5 cursor-hover-trigger'>
           <motion.div
             className="w-8 h-8 lg:w-10 lg:h-10 xl:w-12 xl:h-12  bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center relative overflow-hidden shadow-lg"
             whileHover={{
@@ -333,7 +279,7 @@ const LeftNavbar = () => {
               className="w-4 h-4 lg:w-6 lg:h-6 xl:w-7 xl:h-7 relative z-10"
             />
           </motion.div>
-        </Link>
+        </div>
 
         {/* Hamburger Button */}
         <motion.button
@@ -404,7 +350,7 @@ const LeftNavbar = () => {
             >
               <img
                 ref={currentImageRef}
-                src=""
+                src={menuItems[0].image}
                 alt="Background"
                 className="w-full h-full object-cover"
                 style={{ 
@@ -431,12 +377,10 @@ const LeftNavbar = () => {
                       className="overflow-hidden"
                     >
                       <motion.button
-                        className={`text-3xl lg:text-5xl xl:text-6xl font-bold transition-all duration-300 relative group cursor-pointer ${
-                          pathname === item.path 
-                            ? 'text-white' 
-                            : 'text-white hover:text-gray-200'
-                        }`}
-                        onClick={() => handleNavigation(item.path)}
+                        className="text-3xl lg:text-5xl xl:text-6xl font-bold text-white hover:text-gray-200 transition-all duration-300 relative group cursor-pointer"
+                        onClick={() => {
+                          item.path? router.push(item.path) : null;
+                        }}
                         onMouseEnter={() => handleItemHover(item.name)}
                         onMouseLeave={handleItemLeave}
                         whileHover={{ 
@@ -447,25 +391,13 @@ const LeftNavbar = () => {
                       >
                         {item.name}
                         
-                        {/* Active route indicator */}
-                        {pathname === item.path && (
-                          <motion.div
-                            className="absolute left-0 bottom-0 h-1 bg-white shadow-lg rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: "100%" }}
-                            transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
-                          />
-                        )}
-                        
                         {/* Hover underline effect */}
-                        {pathname !== item.path && (
-                          <motion.div
-                            className="absolute left-0 bottom-0 h-1 bg-white shadow-lg rounded-full"
-                            initial={{ width: 0 }}
-                            whileHover={{ width: "100%" }}
-                            transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
-                          />
-                        )}
+                        <motion.div
+                          className="absolute left-0 bottom-0 h-1 bg-white shadow-lg rounded-full"
+                          initial={{ width: 0 }}
+                          whileHover={{ width: "100%" }}
+                          transition={{ duration: 0.3, ease: [0.33, 1, 0.68, 1] }}
+                        />
                         
                         {/* Hover glow effect */}
                         <motion.div
@@ -475,6 +407,7 @@ const LeftNavbar = () => {
                           transition={{ duration: 0.2 }}
                         />
                       </motion.button>
+                      
                     </motion.div>
                   ))}
                 </div>
@@ -506,8 +439,6 @@ const LeftNavbar = () => {
                     <motion.a
                       key={social.name}
                       href={social.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
                       className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center text-white hover:text-gray-300 transition-colors duration-300 rounded-full hover:bg-white/10 backdrop-blur-sm"
                       whileHover={{ 
                         scale: 1.2, 
